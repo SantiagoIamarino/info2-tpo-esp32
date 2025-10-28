@@ -6,6 +6,7 @@
 #include <WiFiUdp.h>
 
 struct SuenioCFG {
+  uint8_t profile_id   = 1;
   uint8_t horas_suenio = 8;
   bool    alarma_on    = true;
   bool    luz_on       = true;

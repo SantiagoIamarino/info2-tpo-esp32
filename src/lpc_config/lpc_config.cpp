@@ -15,7 +15,7 @@ bool parseConfigFrame(const char* frame, SuenioCFG* out) {
     return false;
   }
 
-  // Formato: <CFG:HORAS_SUENIO=08;ALARMA_ON=TRUE;LUZ_ON=TRUE>
+  // Formato: <CFG:PF_ID=01;HORAS_SUENIO=08;ALARMA_ON=TRUE;LUZ_ON=TRUE>
   if (!frame || strncmp(frame, "<CFG:", 5) != 0) return false;
 
   // Copio a un buffer editable para usar strtok (opcional)
@@ -31,6 +31,12 @@ bool parseConfigFrame(const char* frame, SuenioCFG* out) {
   ++start;
 
   // Busco cada campo por clave
+  // PF_ID=NN
+  char* p = strstr(start, "PF_ID=");
+  if (!p) return false;
+  p += strlen("PF_ID=");
+  out->profile_id = (uint8_t) strtoul(p, nullptr, 10);
+
   // HORAS_SUENIO=NN
   char* h = strstr(start, "HORAS_SUENIO=");
   if (!h) return false;
