@@ -12,7 +12,6 @@ const uint32_t FRAME_TIMEOUT_MS = 300;  // descartar si el frame se corta
 
 
 void Enviar_Config_LPC(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg) {
-  Serial.println("Accion: enviar configuracion");
   lpc_serial->println("<ACK_REQ_CONFIG>");
 
   char buf[80];
@@ -34,7 +33,7 @@ void Enviar_Config_LPC(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg) {
   lpc_serial->println("\r\n");
 }
 
-void handleCommand(const char* cmd, HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg) {
+void handleCommand(const char* cmd, HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg, WiFiUDP& udp) {
   Serial.print("Comando recibido: ");
   Serial.println(cmd);
 
@@ -42,9 +41,7 @@ void handleCommand(const char* cmd, HardwareSerial* lpc_serial, SuenioCFG* sueni
     lpc_serial->println("<PONG>");
   }
   else if (strcmp(cmd, "REQ_CONFIG") == 0) {
-    Serial.println("Accion: solicitar configuracion al PC");
-    Obtener_Config_PC(suenio_cfg);
-    Serial.print("  Horas suenio: "); Serial.println(suenio_cfg->horas_suenio);
+    Obtener_Config_PC(suenio_cfg, udp, 2000);
     Enviar_Config_LPC(lpc_serial, suenio_cfg);
   }
   else if (strncmp(cmd, "INFO_FISIO", 10) == 0) {
@@ -55,7 +52,7 @@ void handleCommand(const char* cmd, HardwareSerial* lpc_serial, SuenioCFG* sueni
   }
 }
 
-void Procesar_Comandos(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg) {
+void Procesar_Comandos(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg, WiFiUDP& udp) {
   while (lpc_serial->available()) {
     char c = (char)lpc_serial->read();
     Serial.println(c);
@@ -71,7 +68,7 @@ void Procesar_Comandos(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg) {
     if (c == '>') {
       frame[idx] = '\0';      // fin del string
       inFrame = false;
-      handleCommand(frame, lpc_serial, suenio_cfg);   // procesar comando
+      handleCommand(frame, lpc_serial, suenio_cfg, udp);   // procesar comando
       idx = 0;
       continue;
     }

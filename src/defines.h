@@ -17,5 +17,3 @@ static const char* WIFI_SSID = "Santiago WiFi";
 static const char* WIFI_PASS = "santiago0701";
 static IPAddress PC_IP(192,168,100,220);       // <-- IP de la PC
 static const uint16_t PC_UDP_PORT = 5005;        // <-- puerto de escucha (nc -ul 5005)
-
-static WiFiUDP udp;

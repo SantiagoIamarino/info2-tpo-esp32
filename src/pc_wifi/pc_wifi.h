@@ -2,6 +2,6 @@
 
 
 void wifiEnsureConnected();
-bool startUDP(uint16_t port);
-void startWiFi();
-bool Esperar_CFG(SuenioCFG* cfg, uint32_t timeout_ms);
+bool startUDP(uint16_t port, WiFiUDP& udp);
+void startWiFi( WiFiUDP& udp );
+bool Esperar_CFG(SuenioCFG* cfg, WiFiUDP& udp, uint32_t timeout_ms);

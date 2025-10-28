@@ -1,10 +1,9 @@
 #include "pc_wifi.h"
 #include "lpc_config/lpc_config.h"
 
-
 unsigned long lastWifiAttempt = 0;
 
-void startWiFi() {
+void startWiFi(WiFiUDP& udp) {
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     udp.begin(0);
@@ -22,7 +21,7 @@ void startWiFi() {
         Serial.printf("[WiFi] Conectado. IP=%s RSSI=%d dBm\n",
                     WiFi.localIP().toString().c_str(), WiFi.RSSI());
 
-        if (!startUDP(PC_UDP_PORT)) {
+        if (!startUDP(PC_UDP_PORT, udp)) {
             Serial.printf("[PC CONNECTION] Conexión FALLÓ", wifi_st);
         } else {
             Serial.printf("[PC CONNECTION] Conectado a %s:%u\n", PC_IP.toString().c_str(), PC_UDP_PORT);
@@ -30,7 +29,7 @@ void startWiFi() {
     }
 }
 
-bool startUDP(uint16_t port) {
+bool startUDP(uint16_t port, WiFiUDP& udp) {
   // 3) WiFiUDP.begin devuelve 1 si ok, 0 si falla
   int ok = udp.begin(port);
   if (!ok) {
@@ -52,13 +51,11 @@ void wifiEnsureConnected() {
 }
 
 // --- Esperar respuesta con timeout (ms) ---
-bool Esperar_CFG(SuenioCFG* cfg, uint32_t timeout_ms = 2000) {
+bool Esperar_CFG(SuenioCFG* cfg, WiFiUDP& udp, uint32_t timeout_ms = 2000) {
   uint32_t t0 = millis();
   char rx[160];
   while (millis() - t0 < timeout_ms) {
     int n = udp.parsePacket();
-    Serial.println("n:");
-    Serial.println(n);
     if (n > 0) {
       if (n >= (int)sizeof(rx)) n = sizeof(rx) - 1;
       int m = udp.read((uint8_t*)rx, n);
@@ -76,8 +73,5 @@ bool Esperar_CFG(SuenioCFG* cfg, uint32_t timeout_ms = 2000) {
     // pequeño delay para no bloquear WiFi
     delay(2);
   }
-  Serial.println("timeou");
-  Serial.println("RX:");
-  Serial.println(rx);
   return false; // timeout
 }

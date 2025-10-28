@@ -1,6 +1,5 @@
 #include "lpc_config.h"
 
-
 // --- helpers ---
 static bool parseBoolToken(const char* s) {
   // acepta "TRUE", "FALSE", y tu variante "0TRUE"
@@ -11,13 +10,10 @@ static bool parseBoolToken(const char* s) {
 }
 
 bool parseConfigFrame(const char* frame, SuenioCFG* out) {
-  Serial.println("parseConfigFrame");
   // Parsear solo si es un CFG
   if (strncmp(frame, "<CFG:", 5) != 0) {
     return false;
   }
-
-  Serial.println("Espera cfg");
 
   // Formato: <CFG:HORAS_SUENIO=08;ALARMA_ON=TRUE;LUZ_ON=TRUE>
   if (!frame || strncmp(frame, "<CFG:", 5) != 0) return false;
@@ -57,14 +53,14 @@ bool parseConfigFrame(const char* frame, SuenioCFG* out) {
   return true;
 }
 
-void Enviar_REQ_CONFIG() {
+void Enviar_REQ_CONFIG(WiFiUDP& udp) {
   const char* payload = "<REQ_CONFIG>";
   udp.beginPacket(PC_IP, PC_UDP_PORT);
   udp.write((const uint8_t*)payload, strlen(payload));
   udp.endPacket();
 }
 
-bool Obtener_Config_PC(SuenioCFG* suenio_cfg, uint32_t timeout_ms) {
-  Enviar_REQ_CONFIG();
-  return Esperar_CFG(suenio_cfg, timeout_ms);
+bool Obtener_Config_PC(SuenioCFG* suenio_cfg, WiFiUDP& udp, uint32_t timeout_ms = 2000) {
+  Enviar_REQ_CONFIG(udp);
+  return Esperar_CFG(suenio_cfg, udp, timeout_ms);
 }

@@ -10,6 +10,7 @@
 #define LPC_Serial Serial2
 
 SuenioCFG suenio_cfg;
+WiFiUDP udp;
 
 void setup() {
   Serial.begin(9600); // debug
@@ -17,7 +18,7 @@ void setup() {
 
   Serial.println("=== ESP32 INIT ===");
   // WiFi arranque (no bloqueante si falla) 
-  startWiFi();
+  startWiFi(udp);
 
   // Iniciar UART2 (LPC845)
   LPC_Serial.begin(UART_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
@@ -25,7 +26,7 @@ void setup() {
 
 void loop() {
   // Leer bytes del UART (LPC845) y buscar comandos entre <>
-  Procesar_Comandos(&LPC_Serial, &suenio_cfg);
+  Procesar_Comandos(&LPC_Serial, &suenio_cfg, udp);
 
   // Asegurar conexion WiFi
   wifiEnsureConnected();
