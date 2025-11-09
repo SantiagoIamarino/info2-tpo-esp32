@@ -16,7 +16,7 @@ void startWiFi(WiFiUDP& udp) {
     }
 
     if (wifi_st != WL_CONNECTED) {
-        Serial.printf("[WiFi] Conexión FALLÓ", wifi_st);
+        Serial.printf("[WiFi] conexion fallo", wifi_st);
     } else {
         Serial.printf("[WiFi] Conectado. IP=%s RSSI=%d dBm\n",
                     WiFi.localIP().toString().c_str(), WiFi.RSSI());
@@ -36,8 +36,31 @@ bool startUDP(uint16_t port, WiFiUDP& udp) {
     Serial.printf("[UDP] begin(%u) FALLÓ\n", port);
     return false;
   }
-  Serial.printf("[UDP] Escuchando en puerto %u\n", port == 0 ? 0 : port);
-  return true;
+
+  // envio <PING> y espero <PONG> de la PC
+  udp.beginPacket(PC_IP, PC_UDP_PORT);
+  const char* ping_str = "<PING>";
+  udp.write((const uint8_t*)ping_str, strlen(ping_str));
+  udp.endPacket();
+
+  uint32_t t0 = millis();
+  char rx[160];
+  while (millis() - t0 < 3000) {
+    int n = udp.parsePacket();
+    if (n > 0) {
+      if (n >= (int)sizeof(rx)) n = sizeof(rx) - 1;
+      int m = udp.read((uint8_t*)rx, n);
+      rx[m] = '\0';
+      if (strcmp(rx, "<PONG>") == 0) {
+        Serial.println("PC (IP: " + udp.remoteIP().toString() + ") conectada correctamente");
+        return true;
+      }
+    }
+    // pequeño delay para no bloquear WiFi
+    delay(2);
+  }
+
+  return false;
 }
 
 void wifiEnsureConnected() {

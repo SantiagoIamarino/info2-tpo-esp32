@@ -16,5 +16,7 @@ struct SuenioCFG {
 // ===== WiFi + UDP =====
 static const char* WIFI_SSID = "Santiago WiFi";
 static const char* WIFI_PASS = "santiago0701";
-static IPAddress PC_IP(192,168,100,220);       // <-- IP de la PC
+//static const char* WIFI_SSID = "moto g75 5G_6207";
+///static const char* WIFI_PASS = "charly1234";
+static IPAddress PC_IP(192,168,100,245);  // <-- IP de la PC --- ipconfig getifaddr en0
 static const uint16_t PC_UDP_PORT = 5005;        // <-- puerto de escucha (nc -ul 5005)

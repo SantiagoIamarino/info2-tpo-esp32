@@ -11,7 +11,7 @@ uint32_t lastByteMs = 0;
 const uint32_t FRAME_TIMEOUT_MS = 300;  // descartar si el frame se corta
 
 
-void Enviar_Config_LPC(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg) {
+void Enviar_Config_LPC(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg, bool es_update) {
   
   char buf[80];
 	//parseo perfil a string de 2 dígitos ejemplo 1 = 01, 10 = 10
@@ -30,15 +30,18 @@ void Enviar_Config_LPC(HardwareSerial* lpc_serial, SuenioCFG* suenio_cfg) {
   hs[1] = '0' + (h % 10);
   hs[2] = '\0';
 
-  snprintf(buf, sizeof(buf),
-           "<CFG:PF_ID=%s;HORAS_SUENIO=%s;ALARMA_ON=%s;LUZ_ON=%s>",
-           pf,
-           hs,
-           suenio_cfg->alarma_on ? "0TRUE" : "FALSE",
-           suenio_cfg->luz_on    ? "0TRUE" : "FALSE");
+	// Formato: <CFG:PF_ID=01;HORAS_SUENIO=08;ALARMA_ON=TRUE;LUZ_ON=TRUE> o <CFG_UPDATE:...>
+	snprintf(buf, sizeof(buf), es_update ? "<CFG_UPDATE:PF_ID=%s;HORAS_SUENIO=%s;ALARMA_ON=%s;LUZ_ON=%s>" 
+																	 : "<CFG:PF_ID=%s;HORAS_SUENIO=%s;ALARMA_ON=%s;LUZ_ON=%s>",
+					 pf,
+					 hs,
+					 suenio_cfg->alarma_on ? "0TRUE" : "FALSE",
+					 suenio_cfg->luz_on ? "0TRUE" : "FALSE");
 
   lpc_serial->println(buf);
   lpc_serial->println("\r\n");
+	Serial.print("Enviado a LPC: ");
+	Serial.println(buf);
 }
 
 void Enviar_Info_Fisio_PC(WiFiUDP& udp, const char* cmd) {
@@ -48,7 +51,7 @@ void Enviar_Info_Fisio_PC(WiFiUDP& udp, const char* cmd) {
   udp.endPacket();
 }
 
-void Esperar_ACK_PC(WiFiUDP& udp, char* ack_str, uint32_t timeout_ms) {
+void Esperar_ACK_PC(WiFiUDP& udp, const char* ack_str, uint32_t timeout_ms) {
   uint32_t t0 = millis();
   char rx[160];
   while (millis() - t0 < timeout_ms) {
@@ -83,10 +86,19 @@ void handleCommand(const char* cmd, HardwareSerial* lpc_serial, SuenioCFG* sueni
     Enviar_ACK_LPC(lpc_serial, "<ACK_REQ_CONFIG>");
     Enviar_Config_LPC(lpc_serial, suenio_cfg);
   }
+	// CFG_UPDATE
+	else if (strncmp(cmd, "<CFG_UPDATE:", 12) == 0) {
+		if (parseConfigFrame(cmd, suenio_cfg, true)) {
+			// enviar update de configuración
+			Enviar_Config_LPC(lpc_serial, suenio_cfg, true);
+		} else {
+			lpc_serial->println("<ERR:CFG_UPDATE>");
+		}
+	}
   else if (strncmp(cmd, "INFO_FISIO", 10) == 0) {
     String formatted_cmd = "<" + String(cmd) + ">";
     Enviar_Info_Fisio_PC(udp, formatted_cmd.c_str());
-    Esperar_ACK_PC(udp, "<ACK_INFO_FISIO>", 2000);
+    Esperar_ACK_PC(udp, "<ACK_INFO_FISIO>", (uint32_t)2000);
     Enviar_ACK_LPC(lpc_serial, "<ACK_INFO_FISIO>");
   }
   else {
